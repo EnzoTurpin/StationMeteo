@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import React, { useState } from "react";
 import styled from "styled-components";
+import CityPage from "./pages/CityPage";
 import WeatherCard from "./components/WeatherCard";
 import WeatherChart from "./components/WeatherChart";
 import DailyForecast from "./components/DailyForecast";
-import weatherApi, { WeatherData } from "./services/api";
-
-// Socket.io connection
-const socket = io(process.env.REACT_APP_API_URL || "http://localhost:3001");
+import { WeatherData } from "./services/api";
 
 const AppContainer = styled.div`
   max-width: 1200px;
@@ -16,6 +13,94 @@ const AppContainer = styled.div`
   font-family: "Arial", sans-serif;
 `;
 
+function App() {
+  const [currentPage, setCurrentPage] = useState<"home" | "cities">("home");
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(
+    null
+  );
+  const [weatherHistory, setWeatherHistory] = useState<WeatherData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Données d'exemple pour la page d'accueil
+  const mockWeather = {
+    temperature: 24,
+    humidity: 20,
+  };
+
+  const forecastData = [
+    { day: "Mercredi", icon: "☁️", temperature: 6, conditions: "Nuageux" },
+    {
+      day: "Jeudi",
+      icon: "⛅",
+      temperature: 8,
+      conditions: "Partiellement nuageux",
+    },
+    { day: "Vendredi", icon: "☁️", temperature: 7, conditions: "Nuageux" },
+    { day: "Samedi", icon: "☀️", temperature: 6, conditions: "Ensoleillé" },
+    { day: "Dimanche", icon: "☁️", temperature: 9, conditions: "Nuageux" },
+    { day: "Lundi", icon: "☀️", temperature: 10, conditions: "Ensoleillé" },
+  ];
+
+  // Navigation
+  const navigateTo = (page: "home" | "cities") => {
+    setCurrentPage(page);
+  };
+
+  // Affichage de la page d'accueil
+  const renderHomePage = () => {
+    return (
+      <>
+        <Header>
+          <Logo>Ynov Météo</Logo>
+          <Navigation>
+            <NavLink
+              href="#"
+              onClick={() => navigateTo("home")}
+              active={currentPage === "home"}
+            >
+              Accueil
+            </NavLink>
+            <NavLink
+              href="#"
+              onClick={() => navigateTo("cities")}
+              active={currentPage === "cities"}
+            >
+              Villes
+            </NavLink>
+            <NavLink href="#">Profil</NavLink>
+          </Navigation>
+        </Header>
+
+        <MainContent>
+          <div>
+            <WeatherCard
+              city="Rennes"
+              temperature={mockWeather.temperature}
+              humidity={mockWeather.humidity}
+            />
+          </div>
+          <div>
+            {loading ? (
+              <div>Loading chart data...</div>
+            ) : (
+              <WeatherChart data={weatherHistory} />
+            )}
+          </div>
+        </MainContent>
+
+        <DailyForecast forecast={forecastData} />
+      </>
+    );
+  };
+
+  return (
+    <AppContainer>
+      {currentPage === "home" ? renderHomePage() : <CityPage />}
+    </AppContainer>
+  );
+}
+
+// Styled components
 const Header = styled.header`
   display: flex;
   justify-content: space-between;
@@ -34,9 +119,11 @@ const Navigation = styled.nav`
   gap: 20px;
 `;
 
-const NavLink = styled.a`
+const NavLink = styled.a<{ active?: boolean }>`
   color: white;
   text-decoration: none;
+  font-weight: ${(props) => (props.active ? "bold" : "normal")};
+
   &:hover {
     text-decoration: underline;
   }
@@ -52,100 +139,5 @@ const MainContent = styled.main`
     grid-template-columns: 1fr;
   }
 `;
-
-function App() {
-  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(
-    null
-  );
-  const [weatherHistory, setWeatherHistory] = useState<WeatherData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Sample forecast data
-  const forecastData = [
-    { day: "Mercredi", icon: "☁️", temperature: 6, conditions: "Nuageux" },
-    {
-      day: "Jeudi",
-      icon: "⛅",
-      temperature: 8,
-      conditions: "Partiellement nuageux",
-    },
-    { day: "Vendredi", icon: "☁️", temperature: 7, conditions: "Nuageux" },
-    { day: "Samedi", icon: "☀️", temperature: 6, conditions: "Ensoleillé" },
-    { day: "Dimanche", icon: "☁️", temperature: 9, conditions: "Nuageux" },
-    { day: "Lundi", icon: "☀️", temperature: 10, conditions: "Ensoleillé" },
-  ];
-
-  // Fetch latest weather data
-  const fetchLatestWeather = async () => {
-    try {
-      const data = await weatherApi.getLatest();
-      setCurrentWeather(data);
-    } catch (error) {
-      console.error("Error fetching latest weather:", error);
-    }
-  };
-
-  // Fetch weather history for today
-  const fetchTodayWeatherHistory = async () => {
-    try {
-      const data = await weatherApi.getToday();
-      setWeatherHistory(data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching weather history:", error);
-      setLoading(false);
-    }
-  };
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchLatestWeather();
-    fetchTodayWeatherHistory();
-
-    // Listen for real-time updates
-    socket.on("newWeatherData", (data: WeatherData) => {
-      setCurrentWeather(data);
-      setWeatherHistory((prev) => [...prev, data]);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  return (
-    <AppContainer>
-      <Header>
-        <Logo>Ynov Météo</Logo>
-        <Navigation>
-          <NavLink href="#">Accueil</NavLink>
-          <NavLink href="#">Villes</NavLink>
-          <NavLink href="#">Profil</NavLink>
-        </Navigation>
-      </Header>
-
-      <MainContent>
-        <div>
-          {currentWeather && (
-            <WeatherCard
-              city="Rennes"
-              temperature={currentWeather.temperature}
-              humidity={currentWeather.humidity}
-            />
-          )}
-        </div>
-        <div>
-          {loading ? (
-            <div>Loading chart data...</div>
-          ) : (
-            <WeatherChart data={weatherHistory} />
-          )}
-        </div>
-      </MainContent>
-
-      <DailyForecast forecast={forecastData} />
-    </AppContainer>
-  );
-}
 
 export default App;
