@@ -260,19 +260,6 @@ const CityPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <Header>
-        <Logo>Ynov Météo</Logo>
-        <Navigation>
-          <NavLink href="#" onClick={goToHomePage}>
-            Accueil
-          </NavLink>
-          <NavLink href="#" active={true}>
-            Villes
-          </NavLink>
-          <NavLink href="#">Profil</NavLink>
-        </Navigation>
-      </Header>
-
       {error && <ErrorContainer>{error}</ErrorContainer>}
 
       <ContentContainer>

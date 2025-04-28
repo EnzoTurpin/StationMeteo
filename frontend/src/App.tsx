@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import CityPage from "./pages/CityPage";
+import Profile from "./pages/Profil";
 import WeatherCard from "./components/WeatherCard";
 import WeatherChart from "./components/WeatherChart";
 import DailyForecast from "./components/DailyForecast";
@@ -14,14 +15,15 @@ const AppContainer = styled.div`
 `;
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<"home" | "cities">("home");
+  const [currentPage, setCurrentPage] = useState<"home" | "cities" | "profile">(
+    "home"
+  );
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(
     null
   );
   const [weatherHistory, setWeatherHistory] = useState<WeatherData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Données d'exemple pour la page d'accueil
   const mockWeather = {
     temperature: 24,
     humidity: 20,
@@ -41,66 +43,69 @@ function App() {
     { day: "Lundi", icon: "☀️", temperature: 10, conditions: "Ensoleillé" },
   ];
 
-  // Navigation
-  const navigateTo = (page: "home" | "cities") => {
+  const navigateTo = (page: "home" | "cities" | "profile") => {
     setCurrentPage(page);
   };
 
-  // Affichage de la page d'accueil
-  const renderHomePage = () => {
-    return (
-      <>
-        <Header>
-          <Logo>Ynov Météo</Logo>
-          <Navigation>
-            <NavLink
-              href="#"
-              onClick={() => navigateTo("home")}
-              active={currentPage === "home"}
-            >
-              Accueil
-            </NavLink>
-            <NavLink
-              href="#"
-              onClick={() => navigateTo("cities")}
-              active={currentPage === "cities"}
-            >
-              Villes
-            </NavLink>
-            <NavLink href="#">Profil</NavLink>
-          </Navigation>
-        </Header>
+  const renderHeader = () => (
+    <Header>
+      <Logo>Ynov Météo</Logo>
+      <Navigation>
+        <NavButton
+          onClick={() => navigateTo("home")}
+          active={currentPage === "home"}
+        >
+          Accueil
+        </NavButton>
+        <NavButton
+          onClick={() => navigateTo("cities")}
+          active={currentPage === "cities"}
+        >
+          Villes
+        </NavButton>
+        <NavButton
+          onClick={() => navigateTo("profile")}
+          active={currentPage === "profile"}
+        >
+          Profil
+        </NavButton>
+      </Navigation>
+    </Header>
+  );
 
-        <MainContent>
-          <div>
-            <WeatherCard
-              city="Rennes"
-              temperature={mockWeather.temperature}
-              humidity={mockWeather.humidity}
-            />
-          </div>
-          <div>
-            {loading ? (
-              <div>Loading chart data...</div>
-            ) : (
-              <WeatherChart data={weatherHistory} />
-            )}
-          </div>
-        </MainContent>
-
-        <DailyForecast forecast={forecastData} />
-      </>
-    );
-  };
+  const renderHomePage = () => (
+    <>
+      <MainContent>
+        <div>
+          <WeatherCard
+            city="Rennes"
+            temperature={mockWeather.temperature}
+            humidity={mockWeather.humidity}
+          />
+        </div>
+        <div>
+          {loading ? (
+            <div>Loading chart data...</div>
+          ) : (
+            <WeatherChart data={weatherHistory} />
+          )}
+        </div>
+      </MainContent>
+      <DailyForecast forecast={forecastData} />
+    </>
+  );
 
   return (
     <AppContainer>
-      {currentPage === "home" ? renderHomePage() : <CityPage />}
+      {renderHeader()}
+      {currentPage === "home" && renderHomePage()}
+      {currentPage === "cities" && <CityPage />}
+      {currentPage === "profile" && <Profile />}
     </AppContainer>
   );
 }
 
-// Styled components
+// Styled Components
 const Header = styled.header`
   display: flex;
   justify-content: space-between;
@@ -119,10 +124,13 @@ const Navigation = styled.nav`
   gap: 20px;
 `;
 
-const NavLink = styled.a<{ active?: boolean }>`
+const NavButton = styled.button<{ active?: boolean }>`
+  background: none;
+  border: none;
   color: white;
-  text-decoration: none;
   font-weight: ${(props) => (props.active ? "bold" : "normal")};
+  cursor: pointer;
+  font-size: 1rem;
 
   &:hover {
     text-decoration: underline;
