@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M400,120 L380,150 L350,180 L300,200 L270,230 L220,250 L180,280 L150,330 L140,380 L160,420 L140,470 L180,520 L220,550 L250,600 L300,620 L350,650 L400,680 L450,650 L500,620 L550,600 L580,550 L620,520 L660,470 L640,420 L660,380 L650,330 L620,280 L580,250 L530,230 L500,200 L450,180 L420,150 L400,120 Z"
+    fill="none"
+    stroke="white"
+    stroke-width="5"
+  />
+  <!-- Corse -->
+  <path
+    d="M580,600 L600,620 L620,650 L600,680 L580,650 L560,620 L580,600 Z"
+    fill="none"
+    stroke="white"
+    stroke-width="5"
+  />
+</svg> 

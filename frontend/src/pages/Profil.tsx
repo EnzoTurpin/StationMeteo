@@ -26,10 +26,13 @@ const Navigation = styled.nav`
   gap: 20px;
 `;
 
-const NavLink = styled.a<{ active?: boolean }>`
+const NavButton = styled.button<{ active?: boolean }>`
+  background: none;
+  border: none;
   color: white;
-  text-decoration: none;
   font-weight: ${(props) => (props.active ? "bold" : "normal")};
+  cursor: pointer;
+  font-size: 1rem;
 
   &:hover {
     text-decoration: underline;
@@ -93,18 +96,56 @@ const SaveButton = styled.button`
   }
 `;
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  onNavigate?: (page: "home" | "cities" | "profile" | "france-map") => void;
+}
+
+const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("john.doe@example.com");
   const [password, setPassword] = useState("");
+  const [currentPage, setCurrentPage] = useState<
+    "home" | "cities" | "profile" | "france-map"
+  >("profile");
 
   const handleSave = () => {
     alert("Informations enregistrées !");
     // ici tu pourras ajouter des requêtes pour envoyer au serveur plus tard
   };
 
+  const navigateTo = (page: "home" | "cities" | "profile" | "france-map") => {
+    setCurrentPage(page);
+    if (onNavigate) {
+      onNavigate(page);
+    }
+  };
+
   return (
     <PageContainer>
+      <Header>
+        <Logo>Ynov Météo</Logo>
+        <Navigation>
+          <NavButton
+            onClick={() => navigateTo("home")}
+            active={currentPage === "home"}
+          >
+            Accueil
+          </NavButton>
+          <NavButton
+            onClick={() => navigateTo("cities")}
+            active={currentPage === "cities"}
+          >
+            Villes
+          </NavButton>
+          <NavButton
+            onClick={() => navigateTo("profile")}
+            active={currentPage === "profile"}
+          >
+            Profil
+          </NavButton>
+        </Navigation>
+      </Header>
+
       <ProfileCard>
         <Avatar />
         <InputGroup>

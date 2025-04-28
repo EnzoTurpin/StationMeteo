@@ -4,6 +4,8 @@ import CitySearch from "../components/CitySearch";
 import CityList from "../components/CityList";
 import CityWeather from "../components/CityWeather";
 import weatherService, { WeatherData } from "../services/weatherApi";
+import { Header } from "../components/ui/header";
+import { Button } from "../components/ui/button";
 
 const PageContainer = styled.div`
   max-width: 1200px;
@@ -50,38 +52,17 @@ const LeftSidebar = styled.div`
   }
 `;
 
+const MapButton = styled(Button)`
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
 const MainContent = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const Header = styled.header`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  color: white;
-`;
-
-const Logo = styled.div`
-  font-size: 1.5rem;
-  font-weight: bold;
-`;
-
-const Navigation = styled.nav`
-  display: flex;
-  gap: 20px;
-`;
-
-const NavLink = styled.a<{ active?: boolean }>`
-  color: white;
-  text-decoration: none;
-  font-weight: ${(props) => (props.active ? "bold" : "normal")};
-
-  &:hover {
-    text-decoration: underline;
-  }
 `;
 
 const LoadingContainer = styled.div`
@@ -112,7 +93,11 @@ const DEFAULT_CITIES = [
   "Clermont-Ferrand",
 ];
 
-const CityPage: React.FC = () => {
+interface CityPageProps {
+  onNavigate?: (page: "home" | "cities" | "profile" | "france-map") => void;
+}
+
+const CityPage: React.FC<CityPageProps> = ({ onNavigate }) => {
   // État pour les villes sauvegardées
   const [savedCities, setSavedCities] = useState<string[]>(() => {
     const saved = localStorage.getItem("savedCities");
@@ -132,6 +117,11 @@ const CityPage: React.FC = () => {
   // États pour le chargement et les erreurs
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Ajout d'un état pour la page actuelle
+  const [currentPage, setCurrentPage] = useState<
+    "home" | "cities" | "profile" | "france-map"
+  >("cities");
 
   // Sauvegarder les villes dans le localStorage quand elles changent
   useEffect(() => {
@@ -218,9 +208,13 @@ const CityPage: React.FC = () => {
     }
   };
 
-  const goToHomePage = () => {
-    // Cette fonction serait utilisée dans un scénario réel avec le router
-    console.log("Navigation vers la page d'accueil");
+  const handleNavigate = (
+    page: "home" | "cities" | "profile" | "france-map"
+  ) => {
+    setCurrentPage(page);
+    if (onNavigate) {
+      onNavigate(page);
+    }
   };
 
   // Rendu du contenu principal en fonction de l'état
@@ -235,31 +229,31 @@ const CityPage: React.FC = () => {
       return <ErrorContainer>{error}</ErrorContainer>;
     }
 
-    if (weatherDataMap[selectedCity]) {
-      const data = weatherDataMap[selectedCity];
+    const weatherData = weatherDataMap[selectedCity];
+
+    if (!weatherData) {
       return (
-        <CityWeather
-          city={data.city}
-          temperature={data.temperature}
-          feelsLike={data.feelsLike}
-          humidity={data.humidity}
-          description={data.description}
-          icon={data.icon}
-          country={data.country}
-        />
+        <LoadingContainer>Chargement des données météo...</LoadingContainer>
       );
     }
 
-    // Fallback pour les cas où la ville sélectionnée n'a pas de données
     return (
-      <LoadingContainer>
-        Sélectionnez une ville pour voir sa météo
-      </LoadingContainer>
+      <CityWeather
+        city={selectedCity}
+        temperature={weatherData.temperature}
+        feelsLike={weatherData.feelsLike}
+        humidity={weatherData.humidity}
+        description={weatherData.description}
+        icon={weatherData.icon}
+        country={weatherData.country}
+      />
     );
   };
 
   return (
     <PageContainer>
+      <Header currentPage={currentPage} onNavigate={handleNavigate} />
+
       {error && <ErrorContainer>{error}</ErrorContainer>}
 
       <ContentContainer>
@@ -269,9 +263,9 @@ const CityPage: React.FC = () => {
             cities={savedCities}
             selectedCity={selectedCity}
             onSelectCity={handleSelectCity}
+            onNavigate={onNavigate}
           />
         </LeftSidebar>
-
         <MainContent>{renderMainContent()}</MainContent>
       </ContentContainer>
     </PageContainer>
