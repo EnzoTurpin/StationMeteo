@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import mqtt from "mqtt"; // <-- AJOUT IMPORTANT
 import CityPage from "./pages/CityPage";
 import Profile from "./pages/Profil";
 import WeatherCard from "./components/WeatherCard";
@@ -24,10 +25,36 @@ function App() {
   const [weatherHistory, setWeatherHistory] = useState<WeatherData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const mockWeather = {
-    temperature: 24,
-    humidity: 20,
-  };
+  // Nouveau état pour la météo MQTT
+  const [temperature, setTemperature] = useState<number | null>(null);
+  const [humidity, setHumidity] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Connexion au broker MQTT
+    const client = mqtt.connect("ws://localhost:8888");
+
+    client.on("connect", () => {
+      console.log("✅ Connecté au broker MQTT");
+      client.subscribe("meteo/temperature");
+      client.subscribe("meteo/humidity");
+    });
+
+    client.on("message", (topic, message) => {
+      const payload = message.toString();
+      console.log(`📩 MQTT Message reçu - ${topic}: ${payload}`);
+
+      if (topic === "meteo/temperature") {
+        setTemperature(parseFloat(payload));
+      }
+      if (topic === "meteo/humidity") {
+        setHumidity(parseFloat(payload));
+      }
+    });
+
+    return () => {
+      client.end();
+    };
+  }, []);
 
   const forecastData = [
     { day: "Mercredi", icon: "☁️", temperature: 6, conditions: "Nuageux" },
@@ -79,8 +106,8 @@ function App() {
         <div>
           <WeatherCard
             city="Rennes"
-            temperature={mockWeather.temperature}
-            humidity={mockWeather.humidity}
+            temperature={temperature ?? 24} // Si pas de valeur MQTT encore, fallback
+            humidity={humidity ?? 20} // fallback
           />
         </div>
         <div>
@@ -105,7 +132,7 @@ function App() {
   );
 }
 
-// Styled Components
+// Styled Components (Header, Logo, Navigation, NavButton, MainContent)
 const Header = styled.header`
   display: flex;
   justify-content: space-between;
