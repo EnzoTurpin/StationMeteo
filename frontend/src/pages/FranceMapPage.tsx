@@ -77,6 +77,7 @@ const fallbackCities = [
 
 interface FranceMapPageProps {
   onNavigate?: (page: "home" | "cities" | "profile" | "france-map") => void;
+  hideHeader?: boolean;
 }
 
 interface MapClickHandlerProps {
@@ -122,7 +123,10 @@ const leafletStyle = `
   }
 `;
 
-const FranceMapPage: React.FC<FranceMapPageProps> = ({ onNavigate }) => {
+const FranceMapPage: React.FC<FranceMapPageProps> = ({
+  onNavigate,
+  hideHeader,
+}) => {
   const [selectedPosition, setSelectedPosition] = useState<
     [number, number] | null
   >(null);
@@ -351,7 +355,9 @@ const FranceMapPage: React.FC<FranceMapPageProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-7xl mx-auto p-5">
       {/* Header */}
-      <Header currentPage={currentPage} onNavigate={navigateTo} />
+      {!hideHeader && (
+        <Header currentPage={currentPage} onNavigate={navigateTo} />
+      )}
 
       {/* Back Button */}
       <BackButton onClick={() => navigateTo("home")} />

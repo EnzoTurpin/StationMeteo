@@ -2,8 +2,11 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { initializeDb } = require("./db");
+const { initializeUserTable } = require("./models/user");
 const weatherRoutes = require("./routes/weather");
+const authRoutes = require("./routes/auth");
 require("dotenv").config();
 
 // MQTT broker dependencies
@@ -25,12 +28,19 @@ const io = socketIo(server, {
 app.set("io", io);
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Frontend URL
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // API routes
 app.use("/api/weather", weatherRoutes);
+app.use("/api/auth", authRoutes);
 
 // Root route
 app.get("/", (req, res) => {
@@ -47,8 +57,8 @@ io.on("connection", (socket) => {
 });
 
 // MQTT Broker setup
-const TCP_PORT = 1883; // For Arduino
-const WS_PORT = 8888; // For Frontend (WebSocket)
+const TCP_PORT = process.env.MQTT_PORT || 1883; // For Arduino
+const WS_PORT = process.env.MQTT_WS_PORT || 8888; // For Frontend (WebSocket)
 
 // MQTT TCP server
 const mqttServer = net.createServer(aedes.handle);
@@ -94,6 +104,9 @@ async function startServer() {
   try {
     // Initialize database first
     await initializeDb();
+
+    // Initialize user table
+    await initializeUserTable();
 
     // Then start the Express server
     server.listen(PORT, () => {

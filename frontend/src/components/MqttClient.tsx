@@ -16,11 +16,11 @@ const MqttClient = () => {
       client.subscribe("meteo/humidity");
     });
 
-    client.on("error", (err) => {
+    client.on("error", (err: Error) => {
       console.error("❌ Erreur de connexion MQTT:", err);
     });
 
-    client.on("message", (topic, message) => {
+    client.on("message", (topic: string, message: Buffer) => {
       const payload = message.toString();
       console.log(`📩 Reçu sur ${topic}: ${payload}`);
 

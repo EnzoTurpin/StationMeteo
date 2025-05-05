@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import mqtt from "mqtt"; // <-- AJOUT IMPORTANT
+import mqtt, { MqttClient, IPublishPacket } from "mqtt"; // Update MQTT import
 import CityPage from "./pages/CityPage";
 import Profile from "./pages/Profil";
-import WeatherCard from "./components/WeatherCard";
-import WeatherChart from "./components/WeatherChart";
-import DailyForecast from "./components/DailyForecast";
+import HomePage from "./pages/HomePage";
+import FranceMapPage from "./pages/FranceMapPage";
 import { WeatherData } from "./services/api";
 
 const AppContainer = styled.div`
@@ -16,22 +15,15 @@ const AppContainer = styled.div`
 `;
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<"home" | "cities" | "profile">(
-    "home"
-  );
-  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(
-    null
-  );
-  const [weatherHistory, setWeatherHistory] = useState<WeatherData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Nouveau état pour la météo MQTT
+  const [currentPage, setCurrentPage] = useState<
+    "home" | "cities" | "profile" | "france-map"
+  >("home");
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
 
   useEffect(() => {
     // Connexion au broker MQTT
-    const client = mqtt.connect("ws://localhost:8888");
+    const client = mqtt.connect("ws://localhost:8889");
 
     client.on("connect", () => {
       console.log("✅ Connecté au broker MQTT");
@@ -39,7 +31,7 @@ function App() {
       client.subscribe("meteo/humidity");
     });
 
-    client.on("message", (topic, message) => {
+    client.on("message", (topic: string, message: Buffer) => {
       const payload = message.toString();
       console.log(`📩 MQTT Message reçu - ${topic}: ${payload}`);
 
@@ -56,21 +48,7 @@ function App() {
     };
   }, []);
 
-  const forecastData = [
-    { day: "Mercredi", icon: "☁️", temperature: 6, conditions: "Nuageux" },
-    {
-      day: "Jeudi",
-      icon: "⛅",
-      temperature: 8,
-      conditions: "Partiellement nuageux",
-    },
-    { day: "Vendredi", icon: "☁️", temperature: 7, conditions: "Nuageux" },
-    { day: "Samedi", icon: "☀️", temperature: 6, conditions: "Ensoleillé" },
-    { day: "Dimanche", icon: "☁️", temperature: 9, conditions: "Nuageux" },
-    { day: "Lundi", icon: "☀️", temperature: 10, conditions: "Ensoleillé" },
-  ];
-
-  const navigateTo = (page: "home" | "cities" | "profile") => {
+  const navigateTo = (page: "home" | "cities" | "profile" | "france-map") => {
     setCurrentPage(page);
   };
 
@@ -96,38 +74,35 @@ function App() {
         >
           Profil
         </NavButton>
+        <NavButton
+          onClick={() => navigateTo("france-map")}
+          active={currentPage === "france-map"}
+        >
+          Carte
+        </NavButton>
       </Navigation>
     </Header>
   );
 
-  const renderHomePage = () => (
-    <>
-      <MainContent>
-        <div>
-          <WeatherCard
-            city="Rennes"
-            temperature={temperature ?? 24} // Si pas de valeur MQTT encore, fallback
-            humidity={humidity ?? 20} // fallback
-          />
-        </div>
-        <div>
-          {loading ? (
-            <div>Loading chart data...</div>
-          ) : (
-            <WeatherChart data={weatherHistory} />
-          )}
-        </div>
-      </MainContent>
-      <DailyForecast forecast={forecastData} />
-    </>
-  );
+  const renderContent = () => {
+    switch (currentPage) {
+      case "home":
+        return <HomePage onNavigate={navigateTo} hideHeader={true} />;
+      case "cities":
+        return <CityPage onNavigate={navigateTo} hideHeader={true} />;
+      case "profile":
+        return <Profile onNavigate={navigateTo} hideHeader={true} />;
+      case "france-map":
+        return <FranceMapPage onNavigate={navigateTo} hideHeader={true} />;
+      default:
+        return <HomePage onNavigate={navigateTo} hideHeader={true} />;
+    }
+  };
 
   return (
     <AppContainer>
       {renderHeader()}
-      {currentPage === "home" && renderHomePage()}
-      {currentPage === "cities" && <CityPage />}
-      {currentPage === "profile" && <Profile />}
+      {renderContent()}
     </AppContainer>
   );
 }
@@ -161,17 +136,6 @@ const NavButton = styled.button<{ active?: boolean }>`
 
   &:hover {
     text-decoration: underline;
-  }
-`;
-
-const MainContent = styled.main`
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 20px;
-  margin-bottom: 20px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
   }
 `;
 

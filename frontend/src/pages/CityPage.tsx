@@ -95,9 +95,13 @@ const DEFAULT_CITIES = [
 
 interface CityPageProps {
   onNavigate?: (page: "home" | "cities" | "profile" | "france-map") => void;
+  hideHeader?: boolean;
 }
 
-const CityPage: React.FC<CityPageProps> = ({ onNavigate }) => {
+const CityPage: React.FC<CityPageProps> = ({
+  onNavigate,
+  hideHeader = false,
+}) => {
   // État pour les villes sauvegardées
   const [savedCities, setSavedCities] = useState<string[]>(() => {
     const saved = localStorage.getItem("savedCities");
@@ -208,6 +212,27 @@ const CityPage: React.FC<CityPageProps> = ({ onNavigate }) => {
     }
   };
 
+  // Fonction pour gérer la suppression d'une ville
+  const handleDeleteCity = (city: string) => {
+    // Ne pas permettre de supprimer la ville sélectionnée
+    if (city === selectedCity) {
+      setError("Impossible de supprimer la ville actuellement sélectionnée");
+      // Effacer le message d'erreur après 3 secondes
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    // Supprimer la ville de la liste
+    setSavedCities((prev) => prev.filter((c) => c !== city));
+
+    // Supprimer également les données météo associées
+    setWeatherDataMap((prev) => {
+      const newMap = { ...prev };
+      delete newMap[city];
+      return newMap;
+    });
+  };
+
   const handleNavigate = (
     page: "home" | "cities" | "profile" | "france-map"
   ) => {
@@ -252,7 +277,9 @@ const CityPage: React.FC<CityPageProps> = ({ onNavigate }) => {
 
   return (
     <PageContainer>
-      <Header currentPage={currentPage} onNavigate={handleNavigate} />
+      {!hideHeader && (
+        <Header currentPage={currentPage} onNavigate={handleNavigate} />
+      )}
 
       {error && <ErrorContainer>{error}</ErrorContainer>}
 
@@ -263,6 +290,7 @@ const CityPage: React.FC<CityPageProps> = ({ onNavigate }) => {
             cities={savedCities}
             selectedCity={selectedCity}
             onSelectCity={handleSelectCity}
+            onDeleteCity={handleDeleteCity}
             onNavigate={onNavigate}
           />
         </LeftSidebar>

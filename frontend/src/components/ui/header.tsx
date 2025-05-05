@@ -13,6 +13,7 @@ const HeaderContainer = styled.header`
   align-items: center;
   margin-bottom: 2rem;
   color: white;
+  padding: 1rem 0;
 `;
 
 const Logo = styled.div`
@@ -44,6 +45,11 @@ export const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
           onClick={() => onNavigate("profile")}
           label="Profil"
           isActive={currentPage === "profile"}
+        />
+        <NavButton
+          onClick={() => onNavigate("france-map")}
+          label="Carte"
+          isActive={currentPage === "france-map"}
         />
       </Navigation>
     </HeaderContainer>
