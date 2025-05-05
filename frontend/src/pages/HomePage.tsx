@@ -141,10 +141,71 @@ const NoDataMessage = styled.div`
   color: #666;
 `;
 
-const HomePage: React.FC<{
+// Nouveaux styles pour le panneau MQTT
+const MqttPanel = styled.div`
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const MqttTitle = styled.h3`
+  color: white;
+  margin-top: 0;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+`;
+
+const MqttStatus = styled.span<{ connected: boolean }>`
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: ${(props) => (props.connected ? "#4CAF50" : "#F44336")};
+  margin-left: 10px;
+`;
+
+const MqttData = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+`;
+
+const MqttValue = styled.div`
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+`;
+
+const MqttLabel = styled.div`
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 5px;
+`;
+
+const MqttValueText = styled.div`
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: white;
+`;
+
+interface HomePageProps {
   onNavigate?: (page: "home" | "cities" | "profile" | "france-map") => void;
   hideHeader?: boolean;
-}> = ({ onNavigate, hideHeader }) => {
+  mqttTemperature?: number | null;
+  mqttHumidity?: number | null;
+  mqttConnected?: boolean;
+}
+
+const HomePage: React.FC<HomePageProps> = ({
+  onNavigate,
+  hideHeader,
+  mqttTemperature,
+  mqttHumidity,
+  mqttConnected = false,
+}) => {
   const [currentPage, setCurrentPage] = useState<
     "home" | "cities" | "profile" | "france-map"
   >("home");
@@ -250,6 +311,36 @@ const HomePage: React.FC<{
     return data;
   };
 
+  // Nouveau rendu pour le panneau MQTT
+  const renderMqttPanel = () => {
+    if (mqttTemperature === undefined && mqttHumidity === undefined) {
+      return null; // Ne pas afficher le panneau si les données MQTT ne sont pas fournies
+    }
+
+    return (
+      <MqttPanel>
+        <MqttTitle>
+          Données IoT en temps réel
+          <MqttStatus connected={mqttConnected} />
+        </MqttTitle>
+        <MqttData>
+          {mqttTemperature !== null && (
+            <MqttValue>
+              <MqttLabel>Température</MqttLabel>
+              <MqttValueText>{mqttTemperature}°C</MqttValueText>
+            </MqttValue>
+          )}
+          {mqttHumidity !== null && (
+            <MqttValue>
+              <MqttLabel>Humidité</MqttLabel>
+              <MqttValueText>{mqttHumidity}%</MqttValueText>
+            </MqttValue>
+          )}
+        </MqttData>
+      </MqttPanel>
+    );
+  };
+
   // Rendu du contenu principal en fonction de l'état
   const renderContent = () => {
     if (loading) {
@@ -262,43 +353,37 @@ const HomePage: React.FC<{
       return <ErrorContainer>{error}</ErrorContainer>;
     }
 
-    // Générer des données horaires si un jour futur est sélectionné
-    const chartData = selectedDay
-      ? generateHourlyDataForSelectedDay(selectedDay)
-      : weatherHistory;
+    if (!currentWeather) {
+      return (
+        <NoDataMessage>
+          Aucune donnée météo disponible pour le moment.
+        </NoDataMessage>
+      );
+    }
 
     return (
       <>
-        {selectedDay && (
-          <BackButton onClick={() => setSelectedDay(null)}>
-            <ButtonIcon>←</ButtonIcon> Retour à aujourd'hui
-          </BackButton>
-        )}
-
         <MainContent>
           <div>
             <WeatherCard
-              city={currentWeather?.city || ""}
+              city={currentWeather.city}
               temperature={
                 selectedDay
                   ? selectedDay.temperature
-                  : currentWeather?.temperature || 0
+                  : currentWeather.temperature
               }
-              humidity={selectedDay ? 50 : currentWeather?.humidity || 0}
+              humidity={selectedDay ? 50 : currentWeather.humidity}
               customTitle={selectedDay ? selectedDay.day : undefined}
               customIcon={selectedDay ? selectedDay.icon : undefined}
               customDescription={
                 selectedDay ? selectedDay.conditions : undefined
               }
             />
+            {renderMqttPanel()}
           </div>
           <div>
-            <ChartTitle>
-              {selectedDay
-                ? `Simulation température et humidité (${selectedDay.day})`
-                : "Évolution température et humidité (aujourd'hui)"}
-            </ChartTitle>
-            <WeatherChart data={chartData} />
+            <ChartTitle>Température aujourd'hui</ChartTitle>
+            <WeatherChart data={weatherHistory} />
           </div>
         </MainContent>
 

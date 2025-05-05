@@ -5,6 +5,7 @@ import CityPage from "./pages/CityPage";
 import Profile from "./pages/Profil";
 import HomePage from "./pages/HomePage";
 import FranceMapPage from "./pages/FranceMapPage";
+import IoTDevicesPage from "./pages/IoTDevicesPage"; // Importer la page IoT
 import { WeatherData } from "./services/api";
 
 const AppContainer = styled.div`
@@ -16,10 +17,11 @@ const AppContainer = styled.div`
 
 function App() {
   const [currentPage, setCurrentPage] = useState<
-    "home" | "cities" | "profile" | "france-map"
+    "home" | "cities" | "profile" | "france-map" | "iot-devices"
   >("home");
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
+  const [mqttConnected, setMqttConnected] = useState<boolean>(false);
 
   useEffect(() => {
     // Connexion au broker MQTT
@@ -27,6 +29,7 @@ function App() {
 
     client.on("connect", () => {
       console.log("✅ Connecté au broker MQTT");
+      setMqttConnected(true);
       client.subscribe("meteo/temperature");
       client.subscribe("meteo/humidity");
     });
@@ -48,7 +51,9 @@ function App() {
     };
   }, []);
 
-  const navigateTo = (page: "home" | "cities" | "profile" | "france-map") => {
+  const navigateTo = (
+    page: "home" | "cities" | "profile" | "france-map" | "iot-devices"
+  ) => {
     setCurrentPage(page);
   };
 
@@ -80,6 +85,12 @@ function App() {
         >
           Carte
         </NavButton>
+        <NavButton
+          onClick={() => navigateTo("iot-devices")}
+          active={currentPage === "iot-devices"}
+        >
+          IoT
+        </NavButton>
       </Navigation>
     </Header>
   );
@@ -87,15 +98,33 @@ function App() {
   const renderContent = () => {
     switch (currentPage) {
       case "home":
-        return <HomePage onNavigate={navigateTo} hideHeader={true} />;
+        return (
+          <HomePage
+            onNavigate={navigateTo}
+            hideHeader={true}
+            mqttTemperature={temperature}
+            mqttHumidity={humidity}
+            mqttConnected={mqttConnected}
+          />
+        );
       case "cities":
         return <CityPage onNavigate={navigateTo} hideHeader={true} />;
       case "profile":
         return <Profile onNavigate={navigateTo} hideHeader={true} />;
       case "france-map":
         return <FranceMapPage onNavigate={navigateTo} hideHeader={true} />;
+      case "iot-devices":
+        return <IoTDevicesPage />;
       default:
-        return <HomePage onNavigate={navigateTo} hideHeader={true} />;
+        return (
+          <HomePage
+            onNavigate={navigateTo}
+            hideHeader={true}
+            mqttTemperature={temperature}
+            mqttHumidity={humidity}
+            mqttConnected={mqttConnected}
+          />
+        );
     }
   };
 
